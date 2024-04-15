@@ -420,6 +420,7 @@ predicate[ParserRuleContext value]
 valueExpression
     : primaryExpression                                                                 #valueExpressionDefault
     | valueExpression AT timeZoneSpecifier                                              #atTimeZone
+    | primaryExpression TYPECAST type                                                   #pgCastType
     | operator=(MINUS | PLUS) valueExpression                                           #arithmeticUnary
     | left=valueExpression operator=(ASTERISK | SLASH | PERCENT) right=valueExpression  #arithmeticBinary
     | left=valueExpression operator=(PLUS | MINUS) right=valueExpression                #arithmeticBinary
@@ -443,23 +444,23 @@ primaryExpression
         (ON OVERFLOW listAggOverflowBehavior)? RIGHT_PAREN
         (WITHIN GROUP LEFT_PAREN ORDER BY sortItem (COMMA sortItem)* RIGHT_PAREN)                          #listagg
     | processingMode? qualifiedName LEFT_PAREN (label=identifier DOT)? ASTERISK RIGHT_PAREN
-        filter? over?                                                                     #functionCall
+        filter? over?                                                                                    #functionCall
     | processingMode? qualifiedName LEFT_PAREN (setQuantifier? expression (COMMA expression)*)?
-        (ORDER BY sortItem (COMMA sortItem)*)? RIGHT_PAREN filter? (nullTreatment? over)?           #functionCall
-    | identifier over                                                                     #measure
-    | identifier ARROW expression                                                          #lambda
-    | LEFT_PAREN (identifier (COMMA identifier)*)? RIGHT_PAREN ARROW expression                             #lambda
+        (ORDER BY sortItem (COMMA sortItem)*)? RIGHT_PAREN filter? (nullTreatment? over)?                #functionCall
+    | identifier over                                                                                    #measure
+    | identifier ARROW expression                                                                        #lambda
+    | LEFT_PAREN (identifier (COMMA identifier)*)? RIGHT_PAREN ARROW expression                          #lambda
     | LEFT_PAREN query RIGHT_PAREN                                                                       #subqueryExpression
     // This is an extension to ANSI SQL, which considers EXISTS to be a <boolean expression>
     | EXISTS LEFT_PAREN query RIGHT_PAREN                                                                #exists
-    | CASE operand=expression whenClause+ (ELSE elseExpression=expression)? END                         #simpleCase
-    | CASE whenClause+ (ELSE elseExpression=expression)? END                                            #searchedCase
+    | CASE operand=expression whenClause+ (ELSE elseExpression=expression)? END                          #simpleCase
+    | CASE whenClause+ (ELSE elseExpression=expression)? END                                             #searchedCase
     | CAST LEFT_PAREN expression AS type RIGHT_PAREN                                                     #cast
     | TRY_CAST LEFT_PAREN expression AS type RIGHT_PAREN                                                 #cast
-    | ARRAY LEFT_BRACKET (expression (COMMA expression)*)? RIGHT_BRACKET                                       #arrayConstructor
-    | value=primaryExpression LEFT_BRACKET index=valueExpression RIGHT_BRACKET                               #subscript
-    | identifier                                                                          #columnReference
-    | base=primaryExpression DOT fieldName=identifier                                     #dereference
+    | ARRAY LEFT_BRACKET (expression (COMMA expression)*)? RIGHT_BRACKET                                 #arrayConstructor
+    | value=primaryExpression LEFT_BRACKET index=valueExpression RIGHT_BRACKET                           #subscript
+    | identifier                                                                                         #columnReference
+    | base=primaryExpression DOT fieldName=identifier                                                    #dereference
     | name=CURRENT_DATE                                                                                  #specialDateTimeFunction
     | name=CURRENT_DATE LEFT_PAREN RIGHT_PAREN                                                           #specialDateTimeFunction
     | name=CURRENT_TIME (LEFT_PAREN precision=INTEGER_VALUE RIGHT_PAREN)?                                #specialDateTimeFunction
