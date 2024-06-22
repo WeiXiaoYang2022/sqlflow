@@ -4,7 +4,7 @@ import io.github.melin.sqlflow.analyzer.Analysis
 import io.github.melin.sqlflow.analyzer.StatementAnalyzer
 import io.github.melin.sqlflow.metadata.SchemaTable
 import io.github.melin.sqlflow.metadata.SimpleMetadataService
-import io.github.melin.sqlflow.parser.SqlParser
+import io.github.melin.sqlflow.parser.SqlFlowParser
 import io.github.melin.sqlflow.util.JsonUtils
 import io.github.melin.superior.common.relational.create.CreateTable
 import io.github.melin.superior.common.relational.dml.InsertTable
@@ -15,7 +15,7 @@ import java.util.*
 
 class FlinkSqlLineageTest2 {
 
-    protected val SQL_PARSER = SqlParser()
+    protected val SQL_PARSER = SqlFlowParser()
 
     @Test
     @Throws(Exception::class)

@@ -4,10 +4,9 @@ import io.github.melin.sqlflow.SqlFlowException;
 import io.github.melin.sqlflow.function.OperatorType;
 import io.github.melin.sqlflow.metadata.MetadataService;
 import io.github.melin.sqlflow.metadata.QualifiedObjectName;
-import io.github.melin.sqlflow.parser.SqlParser;
+import io.github.melin.sqlflow.parser.SqlFlowParser;
 import io.github.melin.sqlflow.tree.*;
 import io.github.melin.sqlflow.tree.expression.*;
-import io.github.melin.sqlflow.tree.literal.*;
 import io.github.melin.sqlflow.tree.literal.LongLiteral;
 import io.github.melin.sqlflow.tree.window.FrameBound;
 import io.github.melin.sqlflow.tree.window.MeasureDefinition;
@@ -18,8 +17,6 @@ import io.github.melin.sqlflow.type.Type;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
-import io.github.melin.sqlflow.tree.*;
-import io.github.melin.sqlflow.tree.expression.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -49,7 +46,7 @@ public class ExpressionAnalyzer {
 
     private final MetadataService metadataService;
 
-    private final SqlParser sqlParser;
+    private final SqlFlowParser sqlFlowParser;
 
     private final Map<NodeRef<Expression>, Type> expressionTypes = new LinkedHashMap<>();
 
@@ -109,8 +106,8 @@ public class ExpressionAnalyzer {
         return unmodifiableSet(windowFunctions);
     }
 
-    private ExpressionAnalyzer(Analysis analysis, MetadataService metadataService, SqlParser sqlParser) {
-        this(analysis, metadataService, sqlParser,
+    private ExpressionAnalyzer(Analysis analysis, MetadataService metadataService, SqlFlowParser sqlFlowParser) {
+        this(analysis, metadataService, sqlFlowParser,
                 analysis.getParameters(),
                 analysis::getWindow);
     }
@@ -118,12 +115,12 @@ public class ExpressionAnalyzer {
     ExpressionAnalyzer(
             Analysis analysis,
             MetadataService metadataService,
-            SqlParser sqlParser,
+            SqlFlowParser sqlFlowParser,
             Map<NodeRef<Parameter>, Expression> parameters,
             Function<Node, Analysis.ResolvedWindow> getResolvedWindow) {
         this.analysis = requireNonNull(analysis, "analysis is null");
         this.metadataService = requireNonNull(metadataService, "analysis is null");
-        this.sqlParser = requireNonNull(sqlParser, "sqlParser is null");
+        this.sqlFlowParser = requireNonNull(sqlFlowParser, "sqlParser is null");
         this.parameters = requireNonNull(parameters, "parameters is null");
         this.getResolvedWindow = requireNonNull(getResolvedWindow, "getResolvedWindow is null");
     }
@@ -587,7 +584,7 @@ public class ExpressionAnalyzer {
             for (Expression argument : arguments) {
                 if (argument instanceof LambdaExpression || argument instanceof BindExpression) {
                     ExpressionAnalyzer innerExpressionAnalyzer = new ExpressionAnalyzer(
-                            analysis, metadataService, sqlParser,
+                            analysis, metadataService, sqlFlowParser,
                             parameters,
                             getResolvedWindow);
                     if (context.getContext().isInLambda()) {
@@ -945,7 +942,7 @@ public class ExpressionAnalyzer {
         if (context.getContext().isInLambda()) {
             throw semanticException(node, "Lambda expression cannot contain subqueries");
         }
-        StatementAnalyzer analyzer = new StatementAnalyzer(analysis, metadataService, sqlParser);
+        StatementAnalyzer analyzer = new StatementAnalyzer(analysis, metadataService, sqlFlowParser);
         Scope subqueryScope = Scope.builder()
                 .withParent(context.getContext().getScope())
                 .build();
@@ -969,9 +966,9 @@ public class ExpressionAnalyzer {
             Scope scope,
             Analysis analysis,
             MetadataService metadataService,
-            SqlParser sqlParser,
+            SqlFlowParser sqlFlowParser,
             Expression expression) {
-        ExpressionAnalyzer analyzer = new ExpressionAnalyzer(analysis, metadataService, sqlParser);
+        ExpressionAnalyzer analyzer = new ExpressionAnalyzer(analysis, metadataService, sqlFlowParser);
         analyzer.analyze(expression, scope);
 
         updateAnalysis(analysis, analyzer);
@@ -996,11 +993,11 @@ public class ExpressionAnalyzer {
                 analyzer.getWindowFunctions());
     }
 
-    public static ExpressionAnalysis analyzeExpressions(MetadataService metadataService, SqlParser sqlParser,
+    public static ExpressionAnalysis analyzeExpressions(MetadataService metadataService, SqlFlowParser sqlFlowParser,
                                                         Iterable<Expression> expressions,
                                                         Map<NodeRef<Parameter>, Expression> parameters) {
         Analysis analysis = new Analysis(null, parameters);
-        ExpressionAnalyzer analyzer = new ExpressionAnalyzer(analysis, metadataService, sqlParser);
+        ExpressionAnalyzer analyzer = new ExpressionAnalyzer(analysis, metadataService, sqlFlowParser);
         for (Expression expression : expressions) {
             analyzer.analyze(
                     expression,
@@ -1025,11 +1022,11 @@ public class ExpressionAnalyzer {
             Scope scope,
             Analysis analysis,
             MetadataService metadataService,
-            SqlParser sqlParser,
+            SqlFlowParser sqlFlowParser,
             CorrelationSupport correlationSupport,
             Analysis.ResolvedWindow window,
             Node originalNode) {
-        ExpressionAnalyzer analyzer = new ExpressionAnalyzer(analysis, metadataService, sqlParser);
+        ExpressionAnalyzer analyzer = new ExpressionAnalyzer(analysis, metadataService, sqlFlowParser);
         analyzer.analyzeWindow(window, scope, originalNode, correlationSupport);
 
         updateAnalysis(analysis, analyzer);

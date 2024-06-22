@@ -3,7 +3,7 @@ package io.github.melin.sqlflow.parser.spark;
 import io.github.melin.sqlflow.analyzer.Analysis;
 import io.github.melin.sqlflow.analyzer.StatementAnalyzer;
 import io.github.melin.sqlflow.parser.AbstractSqlLineageTest;
-import io.github.melin.sqlflow.parser.SqlParser;
+import io.github.melin.sqlflow.parser.SqlFlowParser;
 import io.github.melin.sqlflow.tree.statement.Statement;
 import io.github.melin.sqlflow.util.JsonUtils;
 import org.junit.Test;
@@ -17,7 +17,7 @@ import static java.util.Collections.emptyMap;
  */
 public class SparkSqlLineageTest extends AbstractSqlLineageTest {
 
-    protected static final SqlParser SQL_PARSER = new SqlParser();
+    protected static final SqlFlowParser SQL_PARSER = new SqlFlowParser();
 
     @Test
     public void testInsertInto() throws Exception {

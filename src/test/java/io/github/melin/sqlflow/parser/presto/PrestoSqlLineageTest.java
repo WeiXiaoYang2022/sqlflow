@@ -5,7 +5,7 @@ import io.github.melin.sqlflow.analyzer.OutputColumn;
 import io.github.melin.sqlflow.analyzer.StatementAnalyzer;
 import io.github.melin.sqlflow.metadata.QualifiedObjectName;
 import io.github.melin.sqlflow.parser.AbstractSqlLineageTest;
-import io.github.melin.sqlflow.parser.SqlParser;
+import io.github.melin.sqlflow.parser.SqlFlowParser;
 import io.github.melin.sqlflow.tree.statement.Statement;
 import com.google.common.collect.ImmutableSet;
 import org.junit.Test;
@@ -19,7 +19,7 @@ import static java.util.Collections.emptyMap;
  */
 public class PrestoSqlLineageTest extends AbstractSqlLineageTest {
 
-    protected static final SqlParser SQL_PARSER = new SqlParser();
+    protected static final SqlFlowParser SQL_PARSER = new SqlFlowParser();
 
     @Test
     public void testInsertInto() throws Exception {
