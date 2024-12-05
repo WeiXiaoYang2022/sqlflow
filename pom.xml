@@ -6,7 +6,7 @@
 
     <groupId>io.github.melin.sqlflow</groupId>
     <artifactId>sqlflow</artifactId>
-    <version>1.0.6-SNAPSHOT</version>
+    <version>1.0.7-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>sqlflow</name>
@@ -20,8 +20,8 @@
         <antlr4.version>4.9.3</antlr4.version>
         <antlr4test.version>1.22</antlr4test.version>
         <jackson.verion>2.16.2</jackson.verion>
-        <kotlin.version>1.9.0</kotlin.version>
-        <sql-parser.version>4.0.14</sql-parser.version>
+        <kotlin.version>2.1.0</kotlin.version>
+        <sql-parser.version>4.0.15</sql-parser.version>
     </properties>
 
     <dependencies>

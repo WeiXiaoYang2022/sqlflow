@@ -90,7 +90,7 @@ public class SimpleFlinkMetadataService implements MetadataService {
             return Optional.of(new SchemaTable("mdm_dim_xx_item_attr_translate_lookupmap_oracle_dim", columns));
         } else if (table.getObjectName().equalsIgnoreCase("processed_mdm_product_enrichment")) {
             List<String> columns = Lists.newArrayList();
-            columns.add("PRODUCT_ID");
+            columns.add("PROD_ID");
             columns.add("ENRICHMENT_ID");
             columns.add("LANG");
             columns.add("ENRICHMENT_VALUE");

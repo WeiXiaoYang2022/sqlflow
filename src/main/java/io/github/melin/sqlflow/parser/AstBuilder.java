@@ -1717,9 +1717,16 @@ public class AstBuilder extends SqlFlowParserBaseVisitor<Node> {
         return new QueryPeriod(getLocation(context), type, marker);
     }
 
+    @Override
+    public Node visitTrim(SqlFlowParser.TrimContext context) {
+        if (context.FROM() != null && context.trimsSpecification() == null && context.trimChar == null) {
+            throw parseError("The 'trim' function must have specification, char or both arguments when it takes FROM", context);
+        }
+
+        return visit(context.trimSource);
+    }
+
     // ***************** helpers *****************
-
-
 
     private enum UnicodeDecodeState {
         EMPTY,
