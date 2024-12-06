@@ -414,6 +414,7 @@ predicate[ParserRuleContext value]
     | NOT? LIKE pattern=valueExpression (ESCAPE escape=valueExpression)?                            #like
     | NOT? SIMILAR TO right=valueExpression (ESCAPE escape=valueExpression)?                        #similar
     | IS NOT? NULL                                                                                  #nullPredicate
+    | IS NOT? kind=(TRUE | FALSE | UNKNOWN)                                                         #isPredicate
     | IS NOT? DISTINCT FROM right=valueExpression                                                   #distinctFrom
     ;
 
@@ -424,6 +425,9 @@ valueExpression
     | operator=(MINUS | PLUS) valueExpression                                           #arithmeticUnary
     | left=valueExpression operator=(ASTERISK | SLASH | PERCENT) right=valueExpression  #arithmeticBinary
     | left=valueExpression operator=(PLUS | MINUS) right=valueExpression                #arithmeticBinary
+    | left=valueExpression operator=AMPERSAND right=valueExpression                     #arithmeticBinary
+    | left=valueExpression operator=HAT right=valueExpression                           #arithmeticBinary
+    | left=valueExpression operator=PIPE right=valueExpression                          #arithmeticBinary
     | left=valueExpression CONCAT right=valueExpression                                 #concatenation
     ;
 
@@ -690,7 +694,7 @@ nonReserved
     | SECOND | SECONDS | SECURITY | SEEK | SEMI | SET | SETS | SKIP_ | SIZE | STEP | SLIDE | SESSION
     | SHOW | SOME | START | STATS | SUBSET | SUBSTRING | SYSTEM | SYMMETRIC | SIMILAR
     | TABLES | TABLESAMPLE | TEXT | TIES | TIME | TIMECOL | TIMESTAMP | SYSTEM_TIME | TO | TRAILING | TRUNCATE | TRY_CAST | TUMBLE | TEMPORARY
-    | UNBOUNDED | UNMATCHED | UPDATE | USE | USER
+    | UNBOUNDED | UNMATCHED | UPDATE | USE | USER | UNKNOWN
     | VERSION | VIEW
     | WINDOW | WITHIN | WITHOUT | WEEK | WEEKS
     | YEAR | YEARS
