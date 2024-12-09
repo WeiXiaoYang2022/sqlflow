@@ -1874,6 +1874,8 @@ public class AstBuilder extends SqlFlowParserBaseVisitor<Node> {
                 return ArithmeticBinaryExpression.Operator.DIVIDE;
             case SqlFlowLexer.PERCENT:
                 return ArithmeticBinaryExpression.Operator.MODULUS;
+            case SqlFlowLexer.AMPERSAND:
+                return ArithmeticBinaryExpression.Operator.AMPERSAND;
         }
 
         throw new UnsupportedOperationException("Unsupported operator: " + operator.getText());

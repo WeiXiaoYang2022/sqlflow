@@ -18,7 +18,8 @@ public class ArithmeticBinaryExpression extends Expression {
         SUBTRACT("-"),
         MULTIPLY("*"),
         DIVIDE("/"),
-        MODULUS("%");
+        MODULUS("%"),
+        AMPERSAND("AMPERSAND");
         private final String value;
 
         Operator(String value) {
