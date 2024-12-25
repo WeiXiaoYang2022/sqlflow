@@ -58,9 +58,9 @@ statement
         (COMMENT string)?
         (WITH properties)? AS (query | LEFT_PAREN query RIGHT_PAREN)
         (WITH (NO)? DATA)?                                                  #createTableAsSelect
-    | with? INSERT INTO (TABLE)? qualifiedName partitionSpec? (IF NOT EXISTS)?
+    | with? (INSERT | REPLACE) INTO (TABLE)? qualifiedName partitionSpec? (IF NOT EXISTS)?
         columnAliases? query                                                #insertInto
-    | with? INSERT OVERWRITE (TABLE)? qualifiedName (partitionSpec (IF NOT EXISTS)?)?
+    | with? (INSERT | REPLACE) OVERWRITE (TABLE)? qualifiedName (partitionSpec (IF NOT EXISTS)?)?
         columnAliases? query                                                #insertOverWrite
     | DELETE FROM qualifiedName (WHERE booleanExpression)?                  #delete
     | CREATE (OR REPLACE)? MATERIALIZED VIEW
