@@ -1,5 +1,6 @@
 package io.github.melin.sqlflow.analyzer;
 
+import io.github.melin.sqlflow.AstVisitor;
 import io.github.melin.sqlflow.SqlFlowException;
 import io.github.melin.sqlflow.function.OperatorType;
 import io.github.melin.sqlflow.metadata.MetadataService;
@@ -146,22 +147,22 @@ public class ExpressionAnalyzer {
 
     public Type analyze(Expression expression, Scope scope) {
         Visitor visitor = new Visitor(scope);
-        return visitor.process(expression, new StackableAstVisitor.StackableAstVisitorContext<>(Context.notInLambda(scope, CorrelationSupport.ALLOWED)));
+        return visitor.process(expression, Context.notInLambda(scope, CorrelationSupport.ALLOWED));
     }
 
     public Type analyze(Expression expression, Scope scope, CorrelationSupport correlationSupport) {
         Visitor visitor = new Visitor(scope);
-        return visitor.process(expression, new StackableAstVisitor.StackableAstVisitorContext<>(Context.notInLambda(scope, correlationSupport)));
+        return visitor.process(expression, Context.notInLambda(scope, correlationSupport));
     }
 
     private Type analyze(Expression expression, Scope scope, Set<String> labels) {
         Visitor visitor = new Visitor(scope);
-        return visitor.process(expression, new StackableAstVisitor.StackableAstVisitorContext<>(Context.patternRecognition(scope, labels)));
+        return visitor.process(expression, Context.patternRecognition(scope, labels));
     }
 
     private Type analyze(Expression expression, Scope baseScope, Context context) {
         Visitor visitor = new Visitor(baseScope);
-        return visitor.process(expression, new StackableAstVisitor.StackableAstVisitorContext<>(context));
+        return visitor.process(expression, context);
     }
 
     private void analyzeWindow(Analysis.ResolvedWindow window, Scope scope, Node originalNode, CorrelationSupport correlationSupport) {
@@ -174,7 +175,7 @@ public class ExpressionAnalyzer {
     }
 
     private class Visitor
-            extends StackableAstVisitor<Type, Context> {
+            extends AstVisitor<Type, Context> {
         // Used to resolve FieldReferences (e.g. during local execution planning)
         private final Scope baseScope;
 
@@ -183,7 +184,7 @@ public class ExpressionAnalyzer {
         }
 
         @Override
-        public Type process(Node node, @Nullable StackableAstVisitorContext<Context> context) {
+        public Type process(Node node, @Nullable Context context) {
             if (node instanceof Expression) {
                 // don't double process a node
                 Type type = expressionTypes.get(NodeRef.of(((Expression) node)));
@@ -195,9 +196,9 @@ public class ExpressionAnalyzer {
         }
 
         @Override
-        public Type visitIdentifier(Identifier node, StackableAstVisitorContext<Context> context) {
+        public Type visitIdentifier(Identifier node, Context context) {
             try {
-                ResolvedField resolvedField = context.getContext().getScope().resolveField(node, QualifiedName.of(node.getValue()));
+                ResolvedField resolvedField = context.getScope().resolveField(node, QualifiedName.of(node.getValue()));
                 return handleResolvedField(node, resolvedField, context);
             } catch (SqlFlowException e) {
                 return null;
@@ -205,14 +206,14 @@ public class ExpressionAnalyzer {
         }
 
         @Override
-        public Type visitFunctionCall(FunctionCall node, StackableAstVisitorContext<Context> context) {
-            if (context.getContext().isPatternRecognition() && isPatternRecognitionFunction(node)) {
+        public Type visitFunctionCall(FunctionCall node, Context context) {
+            if (context.isPatternRecognition() && isPatternRecognitionFunction(node)) {
                 return analyzePatternRecognitionFunction(node, context);
             }
 
             if (node.getProcessingMode().isPresent()) {
                 ProcessingMode processingMode = node.getProcessingMode().get();
-                if (!context.getContext().isPatternRecognition()) {
+                if (!context.isPatternRecognition()) {
                     throw semanticException(processingMode, "%s semantics is not supported out of pattern recognition context", processingMode.getMode());
                 }
             }
@@ -320,7 +321,7 @@ public class ExpressionAnalyzer {
             return setExpressionType(node, UNKNOWN);
         }
 
-        private Type analyzePatternRecognitionFunction(FunctionCall node, StackableAstVisitorContext<Context> context) {
+        private Type analyzePatternRecognitionFunction(FunctionCall node, Context context) {
             if (node.getWindow().isPresent()) {
                 throw semanticException(node, "Cannot use OVER with %s pattern recognition function", node.getName());
             }
@@ -383,7 +384,7 @@ public class ExpressionAnalyzer {
                         }
                         Identifier identifier = (Identifier) argument;
                         String label = label(identifier);
-                        if (!context.getContext().getLabels().contains(label)) {
+                        if (!context.getLabels().contains(label)) {
                             throw semanticException(argument, "%s is not a primary pattern variable or subset name", identifier.getValue());
                         }
                     }
@@ -394,7 +395,7 @@ public class ExpressionAnalyzer {
         }
 
         @Override
-        public Type visitWindowOperation(WindowOperation node, StackableAstVisitorContext<Context> context) {
+        public Type visitWindowOperation(WindowOperation node, Context context) {
             Analysis.ResolvedWindow window = getResolvedWindow.apply(node);
             checkState(window != null, "no resolved window for: " + node);
 
@@ -417,7 +418,7 @@ public class ExpressionAnalyzer {
             return setExpressionType(node, UNKNOWN);
         }
 
-        private void analyzeWindow(Analysis.ResolvedWindow window, StackableAstVisitorContext<Context> context, Node originalNode) {
+        private void analyzeWindow(Analysis.ResolvedWindow window, Context context, Node originalNode) {
             // check no nested window functions
             ImmutableList.Builder<Node> childNodes = ImmutableList.builder();
             if (!window.isPartitionByInherited()) {
@@ -479,11 +480,11 @@ public class ExpressionAnalyzer {
                     // analyze expressions in MEASURES and DEFINE (with set of all labels passed as context)
                     for (VariableDefinition variableDefinition : frame.getVariableDefinitions()) {
                         Expression expression = variableDefinition.getExpression();
-                        process(expression, new StackableAstVisitorContext<>(context.getContext().patternRecognition(analysis.getAllLabels())));
+                        process(expression, context.patternRecognition(analysis.getAllLabels()));
                     }
                     for (MeasureDefinition measureDefinition : frame.getMeasures()) {
                         Expression expression = measureDefinition.getExpression();
-                        process(expression, new StackableAstVisitorContext<>(context.getContext().patternRecognition(analysis.getAllLabels())));
+                        process(expression, context.patternRecognition(analysis.getAllLabels()));
                     }
 
                     // validate pattern recognition expressions: MATCH_NUMBER() is not allowed in window
@@ -568,7 +569,7 @@ public class ExpressionAnalyzer {
             }
         }
 
-        private void analyzeFrameRangeOffset(Expression offsetValue, FrameBound.Type boundType, StackableAstVisitorContext<Context> context, Analysis.ResolvedWindow window, Node originalNode) {
+        private void analyzeFrameRangeOffset(Expression offsetValue, FrameBound.Type boundType, Context context, Analysis.ResolvedWindow window, Node originalNode) {
             if (!window.getOrderBy().isPresent()) {
                 throw semanticException(originalNode, "Window frame of type RANGE PRECEDING or FOLLOWING requires ORDER BY");
             }
@@ -580,26 +581,26 @@ public class ExpressionAnalyzer {
             process(offsetValue, context);
         }
 
-        public void getCallArgumentTypes(List<Expression> arguments, StackableAstVisitorContext<Context> context) {
+        public void getCallArgumentTypes(List<Expression> arguments, Context context) {
             for (Expression argument : arguments) {
                 if (argument instanceof LambdaExpression || argument instanceof BindExpression) {
                     ExpressionAnalyzer innerExpressionAnalyzer = new ExpressionAnalyzer(
                             analysis, metadataService, sqlFlowParser,
                             parameters,
                             getResolvedWindow);
-                    if (context.getContext().isInLambda()) {
-                        for (LambdaArgumentDeclaration lambdaArgument : context.getContext().getFieldToLambdaArgumentDeclaration().values()) {
+                    if (context.isInLambda()) {
+                        for (LambdaArgumentDeclaration lambdaArgument : context.getFieldToLambdaArgumentDeclaration().values()) {
                             innerExpressionAnalyzer.setExpressionType(lambdaArgument, getExpressionType(lambdaArgument));
                         }
                     }
-                    innerExpressionAnalyzer.analyze(argument, baseScope, context.getContext());
+                    innerExpressionAnalyzer.analyze(argument, baseScope, context);
                 } else {
                     if (DereferenceExpression.isQualifiedAllFieldsReference(argument)) {
                         // to resolve `count(label.*)` correctly, we should skip the argument, like for `count(*)`
                         // process the argument but do not include it in the list
                         DereferenceExpression allRowsDereference = (DereferenceExpression) argument;
                         String label = label((Identifier) allRowsDereference.getBase());
-                        if (!context.getContext().getLabels().contains(label)) {
+                        if (!context.getLabels().contains(label)) {
                             throw semanticException(allRowsDereference.getBase(), "%s is not a primary pattern variable or subset name", label);
                         }
                         labelDereferences.put(NodeRef.of(allRowsDereference), new LabelPrefixedReference(label));
@@ -614,15 +615,15 @@ public class ExpressionAnalyzer {
             return identifier.getCanonicalValue();
         }
 
-        private Type handleResolvedField(Expression node, ResolvedField resolvedField, StackableAstVisitorContext<Context> context) {
-            if (!resolvedField.isLocal() && context.getContext().getCorrelationSupport() != CorrelationSupport.ALLOWED) {
+        private Type handleResolvedField(Expression node, ResolvedField resolvedField, Context context) {
+            if (!resolvedField.isLocal() && context.getCorrelationSupport() != CorrelationSupport.ALLOWED) {
                 throw semanticException(node, "Reference to column '%s' from outer scope not allowed in this context", node);
             }
 
             FieldId fieldId = FieldId.from(resolvedField);
             Field field = resolvedField.getField();
-            if (context.getContext().isInLambda()) {
-                LambdaArgumentDeclaration lambdaArgumentDeclaration = context.getContext().getFieldToLambdaArgumentDeclaration().get(fieldId);
+            if (context.isInLambda()) {
+                LambdaArgumentDeclaration lambdaArgumentDeclaration = context.getFieldToLambdaArgumentDeclaration().get(fieldId);
                 if (lambdaArgumentDeclaration != null) {
                     // Lambda argument reference is not a column reference
                     lambdaArgumentReferences.put(NodeRef.of((Identifier) node), lambdaArgumentDeclaration);
@@ -647,7 +648,7 @@ public class ExpressionAnalyzer {
         }
 
         @Override
-        public Type visitSubqueryExpression(SubqueryExpression node, StackableAstVisitorContext<Context> context) {
+        public Type visitSubqueryExpression(SubqueryExpression node, Context context) {
             Type type = analyzeSubquery(node, context);
 
             // the implied type of a scalar subquery is that of the unique field in the single-column row
@@ -661,7 +662,7 @@ public class ExpressionAnalyzer {
         }
 
         @Override
-        public Type visitDereferenceExpression(DereferenceExpression node, StackableAstVisitorContext<Context> context) {
+        public Type visitDereferenceExpression(DereferenceExpression node, Context context) {
             if (DereferenceExpression.isQualifiedAllFieldsReference(node)) {
                 throw semanticException(node, "<identifier>.* not allowed in this context");
             }
@@ -671,9 +672,9 @@ public class ExpressionAnalyzer {
             // If this Dereference looks like column reference, try match it to column first.
             if (qualifiedName != null) {
                 // In the context of row pattern matching, fields are optionally prefixed with labels. Labels are irrelevant during type analysis.
-                if (context.getContext().isPatternRecognition()) {
+                if (context.isPatternRecognition()) {
                     String label = label(qualifiedName.getOriginalParts().get(0));
-                    if (context.getContext().getLabels().contains(label)) {
+                    if (context.getLabels().contains(label)) {
                         // In the context of row pattern matching, the name of row pattern input table cannot be used to qualify column names.
                         // (it can only be accessed in PARTITION BY and ORDER BY clauses of MATCH_RECOGNIZE). Consequentially, if a dereference
                         // expression starts with a label, the next part must be a column.
@@ -683,13 +684,13 @@ public class ExpressionAnalyzer {
                             throw semanticException(node, "Column %s prefixed with label %s cannot be resolved", unlabeledName, label);
                         }
                         Identifier unlabeled = qualifiedName.getOriginalParts().get(1);
-                        Optional<ResolvedField> resolvedField = context.getContext().getScope().tryResolveField(node, unlabeledName);
+                        Optional<ResolvedField> resolvedField = context.getScope().tryResolveField(node, unlabeledName);
                         if (!resolvedField.isPresent()) {
                             throw semanticException(node, "Column %s prefixed with label %s cannot be resolved", unlabeledName, label);
                         }
                         // Correlation is not allowed in pattern recognition context. Visitor's context for pattern recognition has CorrelationSupport.DISALLOWED,
                         // and so the following call should fail if the field is from outer scope.
-                        Type type = process(unlabeled, new StackableAstVisitorContext<>(context.getContext().notExpectingLabels()));
+                        Type type = process(unlabeled, context.notExpectingLabels());
                         labelDereferences.put(NodeRef.of(node), new LabelPrefixedReference(label, unlabeled));
                         return setExpressionType(node, type);
                     }
@@ -697,7 +698,7 @@ public class ExpressionAnalyzer {
                     throw missingAttributeException(node, qualifiedName);
                 }
 
-                Scope scope = context.getContext().getScope();
+                Scope scope = context.getScope();
                 Optional<ResolvedField> resolvedField = scope.tryResolveField(node, qualifiedName);
                 if (resolvedField.isPresent()) {
                     return handleResolvedField(node, resolvedField.get(), context);
@@ -737,13 +738,13 @@ public class ExpressionAnalyzer {
         }
 
         @Override
-        public Type visitFieldReference(FieldReference node, StackableAstVisitorContext<Context> context) {
+        public Type visitFieldReference(FieldReference node, Context context) {
             ResolvedField field = baseScope.getField(node.getFieldIndex());
             return handleResolvedField(node, field, context);
         }
 
         @Override
-        public Type visitComparisonExpression(ComparisonExpression node, StackableAstVisitorContext<Context> context) {
+        public Type visitComparisonExpression(ComparisonExpression node, Context context) {
             OperatorType operatorType;
             switch (node.getOperator()) {
                 case EQUAL:
@@ -768,21 +769,21 @@ public class ExpressionAnalyzer {
         }
 
         @Override
-        public Type visitIsNullPredicate(IsNullPredicate node, StackableAstVisitorContext<Context> context) {
+        public Type visitIsNullPredicate(IsNullPredicate node, Context context) {
             process(node.getValue(), context);
 
             return setExpressionType(node, UNKNOWN);
         }
 
         @Override
-        public Type visitIsNotNullPredicate(IsNotNullPredicate node, StackableAstVisitorContext<Context> context) {
+        public Type visitIsNotNullPredicate(IsNotNullPredicate node, Context context) {
             process(node.getValue(), context);
 
             return setExpressionType(node, UNKNOWN);
         }
 
         @Override
-        public Type visitNullIfExpression(NullIfExpression node, StackableAstVisitorContext<Context> context) {
+        public Type visitNullIfExpression(NullIfExpression node, Context context) {
             Type firstType = process(node.getFirst(), context);
             process(node.getSecond(), context);
 
@@ -790,10 +791,10 @@ public class ExpressionAnalyzer {
         }
 
         @Override
-        public Type visitIfExpression(IfExpression node, StackableAstVisitorContext<Context> context) {
+        public Type visitIfExpression(IfExpression node, Context context) {
             Type type;
             if (node.getFalseValue().isPresent()) {
-                type = UNKNOWN;
+                type = coerceToSingleType(context, node, "Result types for IF must be the same", node.getTrueValue(), node.getFalseValue().get());
             } else {
                 type = process(node.getTrueValue(), context);
             }
@@ -802,7 +803,7 @@ public class ExpressionAnalyzer {
         }
 
         @Override
-        public Type visitSearchedCaseExpression(SearchedCaseExpression node, StackableAstVisitorContext<Context> context) {
+        public Type visitSearchedCaseExpression(SearchedCaseExpression node, Context context) {
             Type type = UNKNOWN;
             setExpressionType(node, type);
 
@@ -815,7 +816,7 @@ public class ExpressionAnalyzer {
         }
 
         @Override
-        public Type visitSimpleCaseExpression(SimpleCaseExpression node, StackableAstVisitorContext<Context> context) {
+        public Type visitSimpleCaseExpression(SimpleCaseExpression node, Context context) {
             coerceCaseOperandToToSingleType(node, context);
 
             Type type = UNKNOWN;
@@ -829,7 +830,7 @@ public class ExpressionAnalyzer {
             return type;
         }
 
-        private void coerceCaseOperandToToSingleType(SimpleCaseExpression node, StackableAstVisitorContext<Context> context) {
+        private void coerceCaseOperandToToSingleType(SimpleCaseExpression node, Context context) {
             List<WhenClause> whenClauses = node.getWhenClauses();
             for (WhenClause whenClause : whenClauses) {
                 Expression whenOperand = whenClause.getOperand();
@@ -838,13 +839,13 @@ public class ExpressionAnalyzer {
         }
 
         @Override
-        public Type visitCoalesceExpression(CoalesceExpression node, StackableAstVisitorContext<Context> context) {
+        public Type visitCoalesceExpression(CoalesceExpression node, Context context) {
             Type type = UNKNOWN;
             return setExpressionType(node, type);
         }
 
         @Override
-        public Type visitArithmeticUnary(ArithmeticUnaryExpression node, StackableAstVisitorContext<Context> context) {
+        public Type visitArithmeticUnary(ArithmeticUnaryExpression node, Context context) {
             switch (node.getSign()) {
                 case PLUS:
                     process(node.getValue(), context);
@@ -857,25 +858,25 @@ public class ExpressionAnalyzer {
         }
 
         @Override
-        public Type visitArithmeticBinary(ArithmeticBinaryExpression node, StackableAstVisitorContext<Context> context) {
+        public Type visitArithmeticBinary(ArithmeticBinaryExpression node, Context context) {
             return getOperator(context, node, OperatorType.valueOf(node.getOperator().name()), node.getLeft(), node.getRight());
         }
 
         @Override
-        public Type visitCast(Cast node, StackableAstVisitorContext<Context> context) {
+        public Type visitCast(Cast node, Context context) {
             process(node.getExpression(), context);
 
             return setExpressionType(node, UNKNOWN);
         }
 
         @Override
-        public Type visitInListExpression(InListExpression node, StackableAstVisitorContext<Context> context) {
+        public Type visitInListExpression(InListExpression node, Context context) {
             setExpressionType(node, UNKNOWN);
             return UNKNOWN; // TODO: this really should a be relation type
         }
 
         @Override
-        public Type visitLikePredicate(LikePredicate node, StackableAstVisitorContext<Context> context) {
+        public Type visitLikePredicate(LikePredicate node, Context context) {
             process(node.getValue(), context);
 
             process(node.getPattern(), context);
@@ -888,7 +889,7 @@ public class ExpressionAnalyzer {
         }
 
         @Override
-        public Type visitSubscriptExpression(SubscriptExpression node, StackableAstVisitorContext<Context> context) {
+        public Type visitSubscriptExpression(SubscriptExpression node, Context context) {
             Type baseType = process(node.getBase(), context);
             // Subscript on Row hasn't got a dedicated operator. Its Type is resolved by hand.
             if (baseType instanceof RowType) {
@@ -911,12 +912,23 @@ public class ExpressionAnalyzer {
             return getOperator(context, node, OperatorType.SUBSCRIPT, node.getBase(), node.getIndex());
         }
 
-        private Type getOperator(StackableAstVisitorContext<Context> context, Expression node, OperatorType operatorType, Expression... arguments) {
+        private Type getOperator(Context context, Expression node, OperatorType operatorType, Expression... arguments) {
             for (Expression expression : arguments) {
                 process(expression, context);
             }
 
             return setExpressionType(node, UNKNOWN);
+        }
+
+        private Type coerceToSingleType(Context context, Node node, String message, Expression first, Expression second) {
+            if (first != null) {
+                process(first, context);
+            }
+            if (second != null) {
+                process(second, context);
+            }
+
+            return UNKNOWN;
         }
     }
 
@@ -938,13 +950,13 @@ public class ExpressionAnalyzer {
                 name.equals("MATCH_NUMBER");
     }
 
-    private Type analyzeSubquery(SubqueryExpression node, StackableAstVisitor.StackableAstVisitorContext<Context> context) {
-        if (context.getContext().isInLambda()) {
+    private Type analyzeSubquery(SubqueryExpression node, Context context) {
+        if (context.isInLambda()) {
             throw semanticException(node, "Lambda expression cannot contain subqueries");
         }
         StatementAnalyzer analyzer = new StatementAnalyzer(analysis, metadataService, sqlFlowParser);
         Scope subqueryScope = Scope.builder()
-                .withParent(context.getContext().getScope())
+                .withParent(context.getScope())
                 .build();
         Scope queryScope = analyzer.analyze(node.getQuery(), subqueryScope);
 

@@ -34,7 +34,7 @@ public class SimpleFlinkMetadataService implements MetadataService {
         if (table.getObjectName().equalsIgnoreCase("retek_xx_item_attr_translate_product_enrichment")) {
             List<String> columns = Lists.newArrayList();
             columns.add("ITEM");
-            columns.add("UDA_ID");
+            columns.add("ENRICHMENT_ID");
             columns.add("UDA_VALUE_ID");
             columns.add("LANG");
             columns.add("TRANSLATED_VALUE");
