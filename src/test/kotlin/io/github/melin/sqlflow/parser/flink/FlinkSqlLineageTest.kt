@@ -29,4 +29,27 @@ class FlinkSqlLineageTest {
 
         System.out.println(JsonUtils.toJSONString(analysis.getTarget().get()));
     }
+
+
+    @Test
+    @Throws(Exception::class)
+    fun testInsertInto1() {
+        val sql = """
+            INSERT INTO PROCESSED_MDM_PRODUCT_ENRICHMENT(PROD_ID, ENRICHMENT_ID)
+            select CASE
+                WHEN trim(ITEM) = '' THEN cast(null as string)
+                ELSE ITEM END as PROD_ID, 
+                ENRICHMENT_ID 
+            from RETEK_XX_ITEM_ATTR_TRANSLATE_PRODUCT_ENRICHMENT
+        """.trimIndent()
+        val statement = SQL_PARSER.createStatement(sql)
+        val analysis = Analysis(statement, emptyMap())
+        val statementAnalyzer = StatementAnalyzer(
+            analysis,
+            SimpleFlinkMetadataService(), SQL_PARSER
+        )
+        statementAnalyzer.analyze(statement, Optional.empty())
+
+        System.out.println(JsonUtils.toJSONString(analysis.getTarget().get()));
+    }
 }

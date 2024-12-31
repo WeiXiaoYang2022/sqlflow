@@ -1,5 +1,7 @@
 package io.github.melin.sqlflow.analyzer;
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.LinkedHashMultimap;
 import io.github.melin.sqlflow.AstVisitor;
 import io.github.melin.sqlflow.SqlFlowException;
 import io.github.melin.sqlflow.function.OperatorType;
@@ -804,7 +806,13 @@ public class ExpressionAnalyzer {
 
         @Override
         public Type visitSearchedCaseExpression(SearchedCaseExpression node, Context context) {
-            Type type = UNKNOWN;
+            for (WhenClause whenClause : node.getWhenClauses()) {
+                process(whenClause.getOperand(), context);
+            }
+
+            Type type = coerceToSingleType(context,
+                    "All CASE results",
+                    getCaseResultExpressions(node.getWhenClauses(), node.getDefaultValue()));
             setExpressionType(node, type);
 
             for (WhenClause whenClause : node.getWhenClauses()) {
@@ -813,6 +821,24 @@ public class ExpressionAnalyzer {
             }
 
             return type;
+        }
+
+        private Type coerceToSingleType(Context context, String description, List<Expression> expressions) {
+            // determine super type
+            Type superType = UNKNOWN;
+            for (Expression expression : expressions) {
+                process(expression, context);
+            }
+            return superType;
+        }
+
+        private List<Expression> getCaseResultExpressions(List<WhenClause> whenClauses, Optional<Expression> defaultValue) {
+            List<Expression> resultExpressions = new ArrayList<>();
+            for (WhenClause whenClause : whenClauses) {
+                resultExpressions.add(whenClause.getResult());
+            }
+            defaultValue.ifPresent(resultExpressions::add);
+            return resultExpressions;
         }
 
         @Override
