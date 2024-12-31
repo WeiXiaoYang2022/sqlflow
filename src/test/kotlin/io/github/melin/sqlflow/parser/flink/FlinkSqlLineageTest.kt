@@ -16,7 +16,7 @@ class FlinkSqlLineageTest {
     fun testInsertInto() {
         val sql = """
             INSERT INTO PROCESSED_MDM_PRODUCT_ENRICHMENT(PROD_ID, ENRICHMENT_ID)
-            select if(trim(ITEM) = '',cast(null as string), ITEM) as PROD_ID, ENRICHMENT_ID 
+            select if(ITEM IS NOT NULL, 1, 0) as PROD_ID, ENRICHMENT_ID 
             from RETEK_XX_ITEM_ATTR_TRANSLATE_PRODUCT_ENRICHMENT
         """.trimIndent()
         val statement = SQL_PARSER.createStatement(sql)

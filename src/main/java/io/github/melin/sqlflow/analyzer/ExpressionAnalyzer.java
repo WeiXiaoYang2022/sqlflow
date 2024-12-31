@@ -794,6 +794,8 @@ public class ExpressionAnalyzer {
 
         @Override
         public Type visitIfExpression(IfExpression node, Context context) {
+            process(node.getCondition(), context);
+
             Type type;
             if (node.getFalseValue().isPresent()) {
                 type = coerceToSingleType(context, node, "Result types for IF must be the same", node.getTrueValue(), node.getFalseValue().get());
