@@ -139,22 +139,26 @@ public class RelationType {
         for (Field field : allFields) {
             Optional<String> columnAlias = field.getName();
             if (columnAliases == null) {
-                fieldsBuilder.add(Field.newQualified(
+                Field newField = Field.newQualified(
                         QualifiedName.of(relationAlias),
                         columnAlias,
                         field.getOriginTable(),
                         field.getOriginColumnName(),
-                        field.isAliased()));
+                        field.isAliased());
+                newField.setLocation(field.getLocation());
+                fieldsBuilder.add(newField);
             } else {
                 // hidden fields are not exposed when there are column aliases
                 columnAlias = Optional.of(columnAliases.get(aliasIndex));
                 aliasIndex++;
-                fieldsBuilder.add(Field.newQualified(
+                Field newField = Field.newQualified(
                         QualifiedName.of(relationAlias),
                         columnAlias,
                         field.getOriginTable(),
                         field.getOriginColumnName(),
-                        field.isAliased()));
+                        field.isAliased());
+                newField.setLocation(field.getLocation());
+                fieldsBuilder.add(newField);
             }
         }
 

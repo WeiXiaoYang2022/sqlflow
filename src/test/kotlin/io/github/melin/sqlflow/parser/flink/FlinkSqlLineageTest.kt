@@ -30,7 +30,6 @@ class FlinkSqlLineageTest {
         System.out.println(JsonUtils.toJSONString(analysis.getTarget().get()));
     }
 
-
     @Test
     @Throws(Exception::class)
     fun testInsertInto1() {
@@ -43,6 +42,58 @@ class FlinkSqlLineageTest {
             FROM RETEK_XX_ITEM_ATTR_TRANSLATE_PRODUCT_ENRICHMENT A
             LEFT JOIN MDM_DIM_XX_ITEM_ATTR_TRANSLATE_LOOKUPMAP_ORACLE_DIM B
             ON A.ITEM = B.PROD_ID
+        """.trimIndent()
+        val statement = SQL_PARSER.createStatement(sql)
+        val analysis = Analysis(statement, emptyMap())
+        val statementAnalyzer = StatementAnalyzer(
+            analysis,
+            SimpleFlinkMetadataService(), SQL_PARSER
+        )
+        statementAnalyzer.analyze(statement, Optional.empty())
+
+        System.out.println(JsonUtils.toJSONString(analysis.getTarget().get()));
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun testInsertInto2() {
+        val sql = """
+            INSERT INTO PROCESSED_MDM_PRODUCT_ENRICHMENT(PROD_ID, ENRICHMENT_ID)
+            SELECT ITEM AS PROD_ID, 
+                ENRICHMENT_ID
+            FROM RETEK_XX_ITEM_ATTR_TRANSLATE_PRODUCT_ENRICHMENT 
+            union
+            SELECT ITEM PROD_ID, 
+                UDA_VALUE_ID ENRICHMENT_ID
+            FROM MDM_DIM_XX_ITEM_ATTR_TRANSLATE_LOOKUPMAP_ORACLE_DIM 
+        """.trimIndent()
+        val statement = SQL_PARSER.createStatement(sql)
+        val analysis = Analysis(statement, emptyMap())
+        val statementAnalyzer = StatementAnalyzer(
+            analysis,
+            SimpleFlinkMetadataService(), SQL_PARSER
+        )
+        statementAnalyzer.analyze(statement, Optional.empty())
+
+        System.out.println(JsonUtils.toJSONString(analysis.getTarget().get()));
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun testInsertInto3() {
+        val sql = """
+            INSERT INTO PROCESSED_MDM_PRODUCT_ENRICHMENT(PROD_ID, ENRICHMENT_ID)
+            SELECT B.PROD_ID, A.ATTRIB_ID AS ENRICHMENT_ID FROM mdm_dim_product_attrib_type_lookupmap_mysql A
+            LEFT JOIN (
+                SELECT ITEM AS PROD_ID, 
+                    ENRICHMENT_ID
+                FROM RETEK_XX_ITEM_ATTR_TRANSLATE_PRODUCT_ENRICHMENT 
+                union
+                SELECT ITEM PROD_ID, 
+                    UDA_VALUE_ID ENRICHMENT_ID
+                FROM MDM_DIM_XX_ITEM_ATTR_TRANSLATE_LOOKUPMAP_ORACLE_DIM 
+            ) B 
+            ON A.PROD_ID = B.PROD_ID
         """.trimIndent()
         val statement = SQL_PARSER.createStatement(sql)
         val analysis = Analysis(statement, emptyMap())

@@ -383,8 +383,10 @@ public class StatementAnalyzer {
             analysis.setSelectExpressions(node, descriptorToFields(queryBodyScope).stream()
                     .map(expression -> new Analysis.SelectExpression(expression, Optional.empty())).collect(toImmutableList()));
 
-            Scope queryScope = Scope.builder().withParent(withScope)
-                    .withRelationType(RelationId.of(node), queryBodyScope.getRelationType()).build();
+            Scope queryScope = Scope.builder()
+                    .withParent(withScope)
+                    .withRelationType(RelationId.of(node), queryBodyScope.getRelationType())
+                    .build();
 
             analysis.setScope(node, queryScope);
             return queryScope;
@@ -718,6 +720,7 @@ public class StatementAnalyzer {
                         oldField.getOriginTable(),
                         oldField.getOriginColumnName(),
                         oldField.isAliased());
+                outputDescriptorFields[i].setLocation(oldField.getLocation());
 
                 int index = i; // Variable used in Lambda should be final
                 analysis.addSourceColumns(
@@ -1308,6 +1311,7 @@ public class StatementAnalyzer {
 
                 Field newField = new Field(field.getRelationAlias(), alias, field.getOriginTable(),
                         field.getOriginColumnName(), !allColumns.getAliases().isEmpty() || field.isAliased());
+                newField.setLocation(field.getLocation());
                 itemOutputFieldBuilder.add(newField);
                 analysis.addSourceColumns(newField, analysis.getSourceColumns(field));
             }
@@ -1407,10 +1411,16 @@ public class StatementAnalyzer {
                     }
 
                     Field newField = Field.newUnqualified(field.map(Identifier::getValue), originTable, originColumn, column.getAlias().isPresent()); // TODO don't use analysis as a side-channel. Use outputExpressions to look up the type
-                    if (originTable.isPresent()) {
+                    if (field.isPresent() && field.get().getLocation().isPresent()) {
+                        newField.setLocation(field.get().getLocation().get());
+                    }
+
+                    // fix join 子查询是union 语句
+                    Set<Analysis.SourceColumn> sourceColumns = analysis.getExpressionSourceColumns(expression);
+                    if (sourceColumns.isEmpty() && originTable.isPresent()) {
                         analysis.addSourceColumns(newField, ImmutableSet.of(new Analysis.SourceColumn(originTable.get(), originColumn.get())));
-                    } else {
-                        analysis.addSourceColumns(newField, analysis.getExpressionSourceColumns(expression));
+                    } else if (!sourceColumns.isEmpty()) {
+                        analysis.addSourceColumns(newField, sourceColumns);
                     }
                     outputFields.add(newField);
                 } else {
