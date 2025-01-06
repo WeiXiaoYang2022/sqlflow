@@ -1188,17 +1188,6 @@ public class AstBuilder extends SqlFlowParserBaseVisitor<Node> {
                     (Expression) visit(context.expression(1)));
         }
 
-        if (name.toString().equalsIgnoreCase("coalesce")) {
-            check(context.expression().size() >= 2, "The 'coalesce' function must have at least two arguments", context);
-            check(!window.isPresent(), "OVER clause not valid for 'coalesce' function", context);
-            check(!distinct, "DISTINCT not valid for 'coalesce' function", context);
-            check(nullTreatment == null, "Null treatment clause not valid for 'coalesce' function", context);
-            check(processingMode == null, "Running or final semantics not valid for 'coalesce' function", context);
-            check(!filter.isPresent(), "FILTER not valid for 'coalesce' function", context);
-
-            return new CoalesceExpression(getLocation(context), visit(context.expression(), Expression.class));
-        }
-
         if (name.toString().equalsIgnoreCase("try")) {
             check(context.expression().size() == 1, "The 'try' function must have exactly one argument", context);
             check(!window.isPresent(), "OVER clause not valid for 'try' function", context);
