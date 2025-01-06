@@ -58,7 +58,7 @@ statement
         (COMMENT string)?
         (WITH properties)? AS (query | LEFT_PAREN query RIGHT_PAREN)
         (WITH (NO)? DATA)?                                                  #createTableAsSelect
-    | with? (INSERT | REPLACE) INTO (TABLE)? qualifiedName partitionSpec? (IF NOT EXISTS)?
+    | with? (INSERT | REPLACE) (IGNORE)? INTO (TABLE)? qualifiedName partitionSpec? (IF NOT EXISTS)?
         columnAliases? query                                                #insertInto
     | with? (INSERT | REPLACE) OVERWRITE (TABLE)? qualifiedName (partitionSpec (IF NOT EXISTS)?)?
         columnAliases? query                                                #insertOverWrite

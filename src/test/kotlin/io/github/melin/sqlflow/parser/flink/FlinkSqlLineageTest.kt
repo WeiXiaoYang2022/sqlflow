@@ -110,9 +110,9 @@ class FlinkSqlLineageTest {
     @Throws(Exception::class)
     fun testInsertInto4() {
         val sql = """
-            INSERT INTO PROCESSED_MDM_PRODUCT_ENRICHMENT(PROD_ID, ENRICHMENT_VALUE)
-            SELECT ITEM as PROD_ID, GROUP_CONCAT(LANG SEPARATOR '; ') AS ENRICHMENT_VALUE 
-            from RETEK_XX_ITEM_ATTR_TRANSLATE_PRODUCT_ENRICHMENT
+            INSERT IGNORE INTO PROCESSED_MDM_PRODUCT_ENRICHMENT(PROD_ID, ENRICHMENT_VALUE)
+            SELECT ITEM AS PROD_ID, GROUP_CONCAT(LANG SEPARATOR '; ') AS ENRICHMENT_VALUE 
+            FROM RETEK_XX_ITEM_ATTR_TRANSLATE_PRODUCT_ENRICHMENT
             GROUP BY ITEM
         """.trimIndent()
         val statement = SQL_PARSER.createStatement(sql)
