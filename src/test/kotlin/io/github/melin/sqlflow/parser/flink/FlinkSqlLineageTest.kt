@@ -105,4 +105,24 @@ class FlinkSqlLineageTest {
 
         System.out.println(JsonUtils.toJSONString(analysis.getTarget().get()));
     }
+
+    @Test
+    @Throws(Exception::class)
+    fun testInsertInto4() {
+        val sql = """
+            INSERT INTO PROCESSED_MDM_PRODUCT_ENRICHMENT(PROD_ID, ENRICHMENT_VALUE)
+            SELECT ITEM as PROD_ID, GROUP_CONCAT(LANG SEPARATOR '; ') AS ENRICHMENT_VALUE 
+            from RETEK_XX_ITEM_ATTR_TRANSLATE_PRODUCT_ENRICHMENT
+            GROUP BY ITEM
+        """.trimIndent()
+        val statement = SQL_PARSER.createStatement(sql)
+        val analysis = Analysis(statement, emptyMap())
+        val statementAnalyzer = StatementAnalyzer(
+            analysis,
+            SimpleFlinkMetadataService(), SQL_PARSER
+        )
+        statementAnalyzer.analyze(statement, Optional.empty())
+
+        System.out.println(JsonUtils.toJSONString(analysis.getTarget().get()));
+    }
 }

@@ -442,15 +442,16 @@ primaryExpression
     | BINARY_LITERAL                                                                      #binaryLiteral
     | QUESTION_MARK                                                                       #parameter
     | POSITION LEFT_PAREN valueExpression IN valueExpression RIGHT_PAREN                                 #position
-    | LEFT_PAREN expression (COMMA expression)+ RIGHT_PAREN                                                #rowConstructor
-    | ROW LEFT_PAREN expression (COMMA expression)* RIGHT_PAREN                                            #rowConstructor
+    | LEFT_PAREN expression (COMMA expression)+ RIGHT_PAREN                                              #rowConstructor
+    | ROW LEFT_PAREN expression (COMMA expression)* RIGHT_PAREN                                          #rowConstructor
     | name=LISTAGG LEFT_PAREN setQuantifier? expression (COMMA string)?
         (ON OVERFLOW listAggOverflowBehavior)? RIGHT_PAREN
-        (WITHIN GROUP LEFT_PAREN ORDER BY sortItem (COMMA sortItem)* RIGHT_PAREN)                          #listagg
+        (WITHIN GROUP LEFT_PAREN ORDER BY sortItem (COMMA sortItem)* RIGHT_PAREN)                        #listagg
     | processingMode? qualifiedName LEFT_PAREN (label=identifier DOT)? ASTERISK RIGHT_PAREN
         filter? over?                                                                                    #functionCall
     | processingMode? qualifiedName LEFT_PAREN (setQuantifier? expression (COMMA expression)*)?
-        (ORDER BY sortItem (COMMA sortItem)*)? RIGHT_PAREN filter? (nullTreatment? over)?                #functionCall
+        (ORDER BY sortItem (COMMA sortItem)*)?
+        (SEPARATOR separator=string)? RIGHT_PAREN filter? (nullTreatment? over)?                         #functionCall
     | identifier over                                                                                    #measure
     | identifier ARROW expression                                                                        #lambda
     | LEFT_PAREN (identifier (COMMA identifier)*)? RIGHT_PAREN ARROW expression                          #lambda
@@ -692,7 +693,7 @@ nonReserved
     | QUARTER
     | RANGE | READ | REFRESH | RENAME | REPEATABLE | REPLACE | RESET | RESPECT | RESTRICT | ROW | ROWS | RUNNING
     | SECOND | SECONDS | SECURITY | SEEK | SEMI | SET | SETS | SKIP_ | SIZE | STEP | SLIDE | SESSION
-    | SHOW | SOME | START | STATS | SUBSET | SUBSTRING | SYSTEM | SYMMETRIC | SIMILAR
+    | SHOW | SOME | SEPARATOR | START | STATS | SUBSET | SUBSTRING | SYSTEM | SYMMETRIC | SIMILAR
     | TABLES | TABLESAMPLE | TEXT | TIES | TIME | TIMECOL | TIMESTAMP | SYSTEM_TIME | TO | TRAILING | TRUNCATE | TRY_CAST | TUMBLE | TEMPORARY
     | UNBOUNDED | UNMATCHED | UPDATE | USE | USER | UNKNOWN
     | VERSION | VIEW
