@@ -469,14 +469,11 @@ primaryExpression
     | value=primaryExpression LEFT_BRACKET index=valueExpression RIGHT_BRACKET                           #subscript
     | identifier                                                                                         #columnReference
     | base=primaryExpression DOT fieldName=identifier                                                    #dereference
-    | name=CURRENT_DATE                                                                                  #specialDateTimeFunction
-    | name=CURRENT_DATE LEFT_PAREN RIGHT_PAREN                                                           #specialDateTimeFunction
-    | name=CURRENT_TIME (LEFT_PAREN precision=INTEGER_VALUE RIGHT_PAREN)?                                #specialDateTimeFunction
-    | name=CURRENT_TIME LEFT_PAREN RIGHT_PAREN                                                           #specialDateTimeFunction
-    | name=CURRENT_TIMESTAMP (LEFT_PAREN precision=INTEGER_VALUE RIGHT_PAREN)?                           #specialDateTimeFunction
-    | name=CURRENT_TIMESTAMP LEFT_PAREN RIGHT_PAREN                                                      #specialDateTimeFunction
-    | name=LOCALTIME (LEFT_PAREN precision=INTEGER_VALUE RIGHT_PAREN)?                                   #specialDateTimeFunction
-    | name=LOCALTIMESTAMP (LEFT_PAREN precision=INTEGER_VALUE RIGHT_PAREN)?                              #specialDateTimeFunction
+    | name=CURRENT_DATE (LEFT_PAREN RIGHT_PAREN)?                                                        #currentDate
+    | name=CURRENT_TIME (LEFT_PAREN (precision=INTEGER_VALUE)? RIGHT_PAREN)?                             #currentTime
+    | name=CURRENT_TIMESTAMP (LEFT_PAREN (precision=INTEGER_VALUE)? RIGHT_PAREN)?                        #currentTimestamp
+    | name=LOCALTIME (LEFT_PAREN (precision=INTEGER_VALUE)? RIGHT_PAREN)?                                #localTime
+    | name=LOCALTIMESTAMP (LEFT_PAREN (precision=INTEGER_VALUE)? RIGHT_PAREN)?                           #localTimestamp
     | name=CURRENT_USER                                                                                  #currentUser
     | name=CURRENT_CATALOG                                                                               #currentCatalog
     | name=CURRENT_SCHEMA                                                                                #currentSchema

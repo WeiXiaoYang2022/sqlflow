@@ -973,14 +973,53 @@ public class AstBuilder extends SqlFlowParserBaseVisitor<Node> {
     }
 
     @Override
-    public Node visitSpecialDateTimeFunction(SqlFlowParser.SpecialDateTimeFunctionContext context) {
-        CurrentTime.Function function = getDateTimeFunctionType(context.name);
+    public Node visitCurrentDate(SqlFlowParser.CurrentDateContext ctx) {
+        CurrentTime.Function function = getDateTimeFunctionType(ctx.name);
+        return new CurrentTime(getLocation(ctx), function);
+    }
 
-        if (context.precision != null) {
-            return new CurrentTime(getLocation(context), function, Integer.parseInt(context.precision.getText()));
+    @Override
+    public Node visitCurrentTime(SqlFlowParser.CurrentTimeContext ctx) {
+        CurrentTime.Function function = getDateTimeFunctionType(ctx.name);
+
+        if (ctx.precision != null) {
+            return new CurrentTime(getLocation(ctx), function, Integer.parseInt(ctx.precision.getText()));
         }
 
-        return new CurrentTime(getLocation(context), function);
+        return new CurrentTime(getLocation(ctx), function);
+    }
+
+    @Override
+    public Node visitCurrentTimestamp(SqlFlowParser.CurrentTimestampContext ctx) {
+        CurrentTime.Function function = getDateTimeFunctionType(ctx.name);
+
+        if (ctx.precision != null) {
+            return new CurrentTime(getLocation(ctx), function, Integer.parseInt(ctx.precision.getText()));
+        }
+
+        return new CurrentTime(getLocation(ctx), function);
+    }
+
+    @Override
+    public Node visitLocalTime(SqlFlowParser.LocalTimeContext ctx) {
+        CurrentTime.Function function = getDateTimeFunctionType(ctx.name);
+
+        if (ctx.precision != null) {
+            return new CurrentTime(getLocation(ctx), function, Integer.parseInt(ctx.precision.getText()));
+        }
+
+        return new CurrentTime(getLocation(ctx), function);
+    }
+
+    @Override
+    public Node visitLocalTimestamp(SqlFlowParser.LocalTimestampContext ctx) {
+        CurrentTime.Function function = getDateTimeFunctionType(ctx.name);
+
+        if (ctx.precision != null) {
+            return new CurrentTime(getLocation(ctx), function, Integer.parseInt(ctx.precision.getText()));
+        }
+
+        return new CurrentTime(getLocation(ctx), function);
     }
 
     @Override
@@ -1138,6 +1177,8 @@ public class AstBuilder extends SqlFlowParserBaseVisitor<Node> {
 
     @Override
     public Node visitFunctionCall(SqlFlowParser.FunctionCallContext context) {
+        QualifiedName name = getQualifiedName(context.qualifiedName());
+
         Optional<Expression> filter = visitIfPresent(context.filter(), Expression.class);
         Optional<Window> window = visitIfPresent(context.over(), Window.class);
 
@@ -1145,8 +1186,6 @@ public class AstBuilder extends SqlFlowParserBaseVisitor<Node> {
         if (context.ORDER() != null) {
             orderBy = Optional.of(new OrderBy(visit(context.sortItem(), SortItem.class)));
         }
-
-        QualifiedName name = getQualifiedName(context.qualifiedName());
 
         boolean distinct = isDistinct(context.setQuantifier());
 

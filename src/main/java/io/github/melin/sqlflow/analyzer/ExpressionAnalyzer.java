@@ -1084,7 +1084,9 @@ public class ExpressionAnalyzer {
     }
 
     private static void updateAnalysis(Analysis analysis, ExpressionAnalyzer analyzer) {
-        analysis.addColumnReferences(analyzer.getColumnReferences());
+        if (!analyzer.getColumnReferences().isEmpty()) {
+            analysis.addColumnReferences(analyzer.getColumnReferences());
+        }
     }
 
     private static class Context {
