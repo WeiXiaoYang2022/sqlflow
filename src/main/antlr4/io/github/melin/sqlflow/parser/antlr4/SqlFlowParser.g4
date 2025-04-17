@@ -521,7 +521,7 @@ booleanValue
     ;
 
 interval
-    : INTERVAL sign=(PLUS | MINUS)? (string|INTEGER_VALUE) from=intervalField (TO to=intervalField)?
+    : INTERVAL sign=(PLUS | MINUS)? (string|INTEGER_VALUE|DECIMAL_VALUE) from=intervalField (TO to=intervalField)?
     ;
 
 intervalField
