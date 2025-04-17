@@ -1591,6 +1591,8 @@ public class AstBuilder extends SqlFlowParserBaseVisitor<Node> {
         String value = null;
         if (context.string() != null) {
             value = ((StringLiteral) visit(context.string())).getValue();
+        } else if (context.DECIMAL_VALUE() != null) {
+            value = context.DECIMAL_VALUE().getText();
         } else {
             value = context.INTEGER_VALUE().getText();
         }
